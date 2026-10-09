@@ -1,0 +1,29 @@
+# Optional namespace-scoped permissions for a separate evidence collector.
+# The web application does not use this account or contact Kubernetes.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: opspilot-reader
+  namespace: opspilot-lab
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: opspilot-reader
+  namespace: opspilot-lab
+rules:
+  - apiGroups: [""]
+    resources: [pods, events]
+    verbs: [get, list]
+  - apiGroups: [""]
+    resources: [pods/log]
+    verbs: [get]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: opspilot-reader
+  namespace: opspilot-lab
+subjects:
+  - {kind: ServiceAccount, name: opspilot-reader, namespace: opspilot-lab}
+roleRef: {apiGroup: rbac.authorization.k8s.io, kind: Role, name: opspilot-reader}

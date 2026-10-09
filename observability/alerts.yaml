@@ -1,0 +1,15 @@
+groups:
+  - name: opspilot
+    rules:
+      - alert: OpsPilotUnavailable
+        expr: up{job="opspilot"} == 0
+        for: 2m
+        labels: {severity: warning}
+        annotations:
+          summary: OpsPilot metrics endpoint is unavailable
+      - alert: OpsPilotProviderErrors
+        expr: sum(rate(opspilot_investigations_total{status="error"}[5m])) > 0.01
+        for: 5m
+        labels: {severity: warning}
+        annotations:
+          summary: OpsPilot investigations are failing

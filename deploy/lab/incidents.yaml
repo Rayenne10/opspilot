@@ -1,0 +1,80 @@
+# Intentional failures for a disposable local lab only.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: opspilot-lab
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: memory-failure
+spec:
+  automountServiceAccountToken: false
+  containers:
+    - name: app
+      image: python:3.12-slim
+      command: [python, -u, -c, "import time; print('Allocating a large buffer', flush=True); time.sleep(3); data=bytearray(200*1024*1024); time.sleep(60)"]
+      resources:
+        requests: {cpu: 50m, memory: 32Mi}
+        limits: {cpu: 200m, memory: 64Mi}
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: missing-image
+spec:
+  automountServiceAccountToken: false
+  containers:
+    - name: app
+      image: nginx:opspilot-intentionally-missing-tag
+      resources:
+        requests: {cpu: 10m, memory: 16Mi}
+        limits: {cpu: 100m, memory: 64Mi}
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: missing-config
+spec:
+  automountServiceAccountToken: false
+  containers:
+    - name: app
+      image: python:3.12-slim
+      command: [python, -c, "import time; time.sleep(3600)"]
+      env:
+        - name: DATABASE_PASSWORD
+          valueFrom:
+            secretKeyRef: {name: intentionally-absent-secret, key: password}
+      resources:
+        requests: {cpu: 10m, memory: 16Mi}
+        limits: {cpu: 100m, memory: 64Mi}
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: readiness-failure
+spec:
+  automountServiceAccountToken: false
+  containers:
+    - name: app
+      image: python:3.12-slim
+      command:
+        - python
+        - -u
+        - -c
+        - |
+          from http.server import HTTPServer, BaseHTTPRequestHandler
+          class Handler(BaseHTTPRequestHandler):
+              def do_GET(self):
+                  self.send_response(503)
+                  self.end_headers()
+                  self.wfile.write(b'dependency unavailable')
+          HTTPServer(('0.0.0.0', 8080), Handler).serve_forever()
+      ports: [{containerPort: 8080}]
+      readinessProbe:
+        httpGet: {path: /ready, port: 8080}
+        initialDelaySeconds: 2
+        periodSeconds: 5
+      resources:
+        requests: {cpu: 10m, memory: 32Mi}
+        limits: {cpu: 100m, memory: 64Mi}

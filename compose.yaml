@@ -1,0 +1,30 @@
+services:
+  app:
+    build: .
+    image: opspilot:local
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      OPSPILOT_MODE: ${OPSPILOT_MODE:-demo}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4.1-mini}
+      OPENAI_EMBEDDING_MODEL: ${OPENAI_EMBEDDING_MODEL:-text-embedding-3-small}
+      OPENAI_EMBEDDING_DIMENSIONS: ${OPENAI_EMBEDDING_DIMENSIONS:-1536}
+      QDRANT_URL: ${QDRANT_URL:-http://qdrant:6333}
+      QDRANT_API_KEY: ${QDRANT_API_KEY:-}
+      OPSPILOT_API_TOKEN: ${OPSPILOT_API_TOKEN:-}
+      OPSPILOT_MAX_CONCURRENT: ${OPSPILOT_MAX_CONCURRENT:-2}
+    read_only: true
+    tmpfs:
+      - /tmp:size=32m
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    restart: unless-stopped
+  qdrant:
+    image: qdrant/qdrant:v1.19.1
+    profiles: [live]
+    volumes:
+      - qdrant_data:/qdrant/storage
+    restart: unless-stopped
+volumes:
+  qdrant_data:

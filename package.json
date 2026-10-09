@@ -1,0 +1,7 @@
+{
+  "name": "opspilot-browser-checks",
+  "private": true,
+  "type": "module",
+  "scripts": {"test:browser": "node scripts/browser-smoke.mjs"},
+  "devDependencies": {"playwright": "1.62.1"}
+}
